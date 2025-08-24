@@ -88,3 +88,78 @@ bool login() {
         return false;
     }
 }
+// ===== Book Management =====
+void addBook() {
+    if (currentUserRole != "admin") {
+        cout << "Access denied. Only admin can perform this action.\n";
+        return;
+    }
+
+    string title, author, genre, publisher, isbn, edition, rack, language;
+    int year;
+    double price;
+
+    cout << "Title: "; getline(cin, title);
+    cout << "Author: "; getline(cin, author);
+    cout << "Genre: "; getline(cin, genre);
+    cout << "Publisher: "; getline(cin, publisher);
+    cout << "ISBN (unique): "; getline(cin, isbn);
+    if (exists("SELECT * FROM Books WHERE ISBN='" + isbn + "'")) {
+        cout << "ISBN already exists.\n"; return;
+    }
+    cout << "Edition: "; getline(cin, edition);
+    cout << "Published Year: "; cin >> year; cin.ignore();
+    cout << "Price: "; cin >> price; cin.ignore();
+    cout << "Rack Location: "; getline(cin, rack);
+    cout << "Language: "; getline(cin, language);
+
+    string sql = "INSERT INTO Books (Title, Author, Genre, Publisher, ISBN, Edition, PublishedYear, Price, RackLocation, Language, Availability) "
+                 "VALUES (N'" + title + "', N'" + author + "', N'" + genre + "', N'" + publisher + "', '" + isbn + "', N'" + edition + "', " +
+                 to_string(year) + ", " + to_string(price) + ", N'" + rack + "', N'" + language + "', 1)";
+
+    cout << (execSQL(sql) ? "Book added successfully.\n" : "Failed to add book.\n");
+}
+
+void updateBook() {
+    if (currentUserRole != "admin") {
+        cout << "Access denied. Only admin can perform this action.\n";
+        return;
+    }
+
+    string isbn;
+    cout << "Enter ISBN to update: "; getline(cin, isbn);
+    if (!exists("SELECT * FROM Books WHERE ISBN='" + isbn + "'")) {
+        cout << "Book not found.\n"; return;
+    }
+
+    string title, author, genre, publisher, edition, rack, language;
+    int year = 0;
+    double price = 0;
+
+    cout << "New Title (leave blank to skip): "; getline(cin, title);
+    cout << "New Author (leave blank to skip): "; getline(cin, author);
+    cout << "New Genre (leave blank to skip): "; getline(cin, genre);
+    cout << "New Publisher (leave blank to skip): "; getline(cin, publisher);
+    cout << "New Edition (leave blank to skip): "; getline(cin, edition);
+    cout << "New Published Year (0 to skip): "; cin >> year; cin.ignore();
+    cout << "New Price (0 to skip): "; cin >> price; cin.ignore();
+    cout << "New Rack Location (leave blank to skip): "; getline(cin, rack);
+    cout << "New Language (leave blank to skip): "; getline(cin, language);
+
+    string sql = "UPDATE Books SET ";
+    bool first = true;
+
+    if (!title.empty()) { sql += "Title=N'" + title + "'"; first = false; }
+    if (!author.empty()) { sql += (first ? "" : ", ") + string("Author=N'") + author + "'"; first = false; }
+    if (!genre.empty()) { sql += (first ? "" : ", ") + string("Genre=N'") + genre + "'"; first = false; }
+    if (!publisher.empty()) { sql += (first ? "" : ", ") + string("Publisher=N'") + publisher + "'"; first = false; }
+    if (!edition.empty()) { sql += (first ? "" : ", ") + string("Edition=N'") + edition + "'"; first = false; }
+    if (year != 0) { sql += (first ? "" : ", ") + string("PublishedYear=") + to_string(year); first = false; }
+    if (price != 0) { sql += (first ? "" : ", ") + string("Price=") + to_string(price); first = false; }
+    if (!rack.empty()) { sql += (first ? "" : ", ") + string("RackLocation=N'") + rack + "'"; first = false; }
+    if (!language.empty()) { sql += (first ? "" : ", ") + string("Language=N'") + language + "'"; }
+
+    sql += " WHERE ISBN='" + isbn + "'";
+
+    cout << (execSQL(sql) ? "Book updated successfully.\n" : "Update failed.\n");
+}
