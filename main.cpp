@@ -277,3 +277,80 @@ void updateMember() {
     sql += " WHERE Email='" + email + "'";
     cout << (execSQL(sql) ? "Member updated successfully.\n" : "Failed to update member.\n");
 }
+void deleteMember() {
+    if (currentUserRole != "admin") {
+        cout << "Access denied. Only admin can perform this action.\n";
+        return;
+    }
+
+    string email;
+    cout << "Enter email of member to deactivate: "; getline(cin, email);
+    if (!exists("SELECT * FROM members WHERE email='" + email + "'")) {
+        cout << "Member not found.\n"; 
+        return;
+    }
+
+    string sql = "UPDATE members SET Status=N'Inactive' WHERE Email='" + email + "'";
+    cout << (execSQL(sql) ? "Member deactivated successfully.\n" : "Failed to deactivate member.\n");
+}
+
+void viewMembers() {
+    string sql = "SELECT MemberID, Name, Email, Phone, Address, MembershipType, JoinDate, Status FROM members";
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        cout << "\nID\tName\tEmail\tPhone\tAddress\tMembership\tJoinDate\tStatus\n";
+        while (SQLFetch(stmt) == SQL_SUCCESS) {
+            int id;
+            char name[150], email[100], phone[20], address[255], membership[20], status[20];
+            char joinDate[20];  // format YYYY-MM-DD
+
+            SQLGetData(stmt, 1, SQL_C_SLONG, &id, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_CHAR, name, sizeof(name), NULL);
+            SQLGetData(stmt, 3, SQL_C_CHAR, email, sizeof(email), NULL);
+            SQLGetData(stmt, 4, SQL_C_CHAR, phone, sizeof(phone), NULL);
+            SQLGetData(stmt, 5, SQL_C_CHAR, address, sizeof(address), NULL);
+            SQLGetData(stmt, 6, SQL_C_CHAR, membership, sizeof(membership), NULL);
+            SQLGetData(stmt, 7, SQL_C_CHAR, joinDate, sizeof(joinDate), NULL);
+            SQLGetData(stmt, 8, SQL_C_CHAR, status, sizeof(status), NULL);
+
+            cout << id << "\t" << name << "\t" << email << "\t" << phone << "\t" << address << "\t"
+                 << membership << "\t" << joinDate << "\t" << status << "\n";
+        }
+    }
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+}
+
+void searchMembers() {
+    string keyword;
+    cout << "Enter name/email to search: ";
+    getline(cin, keyword);
+
+    string sql = "SELECT MemberID, Name, Email, Phone, Address, MembershipType, JoinDate, Status FROM members "
+                 "WHERE Name LIKE N'%" + keyword + "%' OR Email LIKE N'%" + keyword + "%'";
+
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        cout << "\nID\tName\tEmail\tPhone\tAddress\tMembership\tJoinDate\tStatus\n";
+        while (SQLFetch(stmt) == SQL_SUCCESS) {
+            int id;
+            char name[150], email[100], phone[20], address[255], membership[20], status[20];
+            char joinDate[20];
+
+            SQLGetData(stmt, 1, SQL_C_SLONG, &id, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_CHAR, name, sizeof(name), NULL);
+            SQLGetData(stmt, 3, SQL_C_CHAR, email, sizeof(email), NULL);
+            SQLGetData(stmt, 4, SQL_C_CHAR, phone, sizeof(phone), NULL);
+            SQLGetData(stmt, 5, SQL_C_CHAR, address, sizeof(address), NULL);
+            SQLGetData(stmt, 6, SQL_C_CHAR, membership, sizeof(membership), NULL);
+            SQLGetData(stmt, 7, SQL_C_CHAR, joinDate, sizeof(joinDate), NULL);
+            SQLGetData(stmt, 8, SQL_C_CHAR, status, sizeof(status), NULL);
+
+            cout << id << "\t" << name << "\t" << email << "\t" << phone << "\t" << address << "\t"
+                 << membership << "\t" << joinDate << "\t" << status << "\n";
+        }
+    }
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+}
+// ... similar functions for updateMember, deleteMember, viewMembers, searchMembers
