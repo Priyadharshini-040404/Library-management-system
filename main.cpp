@@ -571,3 +571,112 @@ void fineCollectionSummary() {
 
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
+void exportReportsToCSV() {
+    ofstream file("LibraryReports.csv");
+    if (!file.is_open()) {
+        cout << "Failed to open file for writing.\n";
+        return;
+    }
+ 
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+ 
+    file << "Top 10 Issued Books\n";
+    file << "BookID,Title,IssueCount\n";
+ 
+    string sql1 = "SELECT TOP 10 b.bookid, b.title, COUNT(t.bookid) AS issue_count "
+                  "FROM transactions t "
+                  "JOIN books b ON t.bookid = b.bookid "
+                  "GROUP BY b.bookid, b.title "
+                  "ORDER BY issue_count DESC";
+ 
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql1.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        while (SQLFetch(stmt) == SQL_SUCCESS) {
+            int bookid, count;
+            char title[255];
+            SQLGetData(stmt, 1, SQL_C_SLONG, &bookid, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_CHAR, title, sizeof(title), NULL);
+            SQLGetData(stmt, 3, SQL_C_SLONG, &count, 0, NULL);
+            file << bookid << "," << title << "," << count << "\n";
+        }
+    } else {
+        file << "Failed to fetch top issued books.\n";
+    }
+ 
+    file << "\n";
+ 
+    file << "Most Active Members\n";
+    file << "MemberID,Name,TransactionCount\n";
+ 
+    SQLFreeStmt(stmt, SQL_CLOSE);
+    string sql2 = "SELECT TOP 10 m.memberid, m.name, COUNT(t.transactionid) AS txn_count "
+                  "FROM transactions t "
+                  "JOIN members m ON t.memberid = m.memberid "
+                  "GROUP BY m.memberid, m.name "
+                  "ORDER BY txn_count DESC";
+ 
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql2.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        while (SQLFetch(stmt) == SQL_SUCCESS) {
+            int memberid, count;
+            char name[255];
+            SQLGetData(stmt, 1, SQL_C_SLONG, &memberid, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_CHAR, name, sizeof(name), NULL);
+            SQLGetData(stmt, 3, SQL_C_SLONG, &count, 0, NULL);
+            file << memberid << "," << name << "," << count << "\n";
+        }
+    } else {
+        file << "Failed to fetch active members.\n";
+    }
+ 
+    file << "\n";
+ 
+    file << "Fine Collection Summary\n";
+    file << "TotalFineAmount\n";
+ 
+    SQLFreeStmt(stmt, SQL_CLOSE);
+    string sql3 = "SELECT SUM(fineamount) FROM transactions WHERE fineamount IS NOT NULL";
+ 
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql3.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        double totalFine = 0.0;
+        if (SQLFetch(stmt) == SQL_SUCCESS) {
+            SQLGetData(stmt, 1, SQL_C_DOUBLE, &totalFine, 0, NULL);
+            file << totalFine << "\n";
+        }
+    } else {
+        file << "Failed to fetch fine summary.\n";
+    }
+ 
+    file.close();
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+ 
+    cout << "Report exported to LibraryReports.csv\n";
+}
+
+// ===== Menu functions =====
+void bookMenu();
+void memberMenu();
+void transactionMenu();
+void reportsMenu();
+void showMenu();
+
+// ===== Main =====
+int main() {
+    if (!SQL_SUCCEEDED(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env))) { cerr << "Env failed\n"; return 1; }
+    SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
+    if (!SQL_SUCCEEDED(SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc))) { cerr << "DBC failed\n"; return 1; }
+
+    string connStr = "DRIVER={SQL Server};SERVER=PSILENL068;DATABASE=LibraryManagementSystem;Trusted_Connection=yes;";
+    if (!SQL_SUCCEEDED(SQLDriverConnect(dbc, NULL, (SQLCHAR*)connStr.c_str(), SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE))) {
+        showError("Connect", dbc, SQL_HANDLE_DBC);
+        return 1;
+    }
+
+    if (!login()) return 0;
+
+    showMenu();
+
+    SQLDisconnect(dbc);
+    SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+    SQLFreeHandle(SQL_HANDLE_ENV, env);
+    return 0;
+}
