@@ -437,3 +437,70 @@ void returnBook() {
     execSQL("UPDATE Books SET Availability = 1 WHERE BookID = " + to_string(bookId));
     cout << "Book returned. Fine: ₹" << fine << "\n";
 }
+void reserveBook() {
+    int bookId, memberId;
+    cout << "Enter Book ID to reserve: ";
+    cin >> bookId;
+    cout << "Enter Member ID: ";
+    cin >> memberId;
+    cin.ignore();
+
+    string check = "SELECT Availability FROM Books WHERE BookID = " + to_string(bookId);
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+    SQLExecDirect(stmt, (SQLCHAR*)check.c_str(), SQL_NTS);
+
+    int available = 0;
+    if (SQLFetch(stmt) == SQL_SUCCESS)
+        SQLGetData(stmt, 1, SQL_C_LONG, &available, 0, NULL);
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+
+    if (available) {
+        cout << "Book is available, no need to reserve.\n";
+        return;
+    }
+
+    string sql = "INSERT INTO Reservations (MemberID, BookID) VALUES (" + to_string(memberId) + ", " + to_string(bookId) + ")";
+    if (execSQL(sql))
+        cout << "Book reserved successfully.\n";
+    else
+        cout << "Failed to reserve.\n";
+}
+
+void transactionHistory() {
+    string filter;
+    cout << "Search by:\n1. Member ID\n2. Book ID\n> ";
+    getline(cin, filter);
+
+    string input;
+    cout << "Enter ID: ";
+    getline(cin, input);
+
+     string sql = string("SELECT TransactionID, MemberID, BookID, IssueDate, DueDate, ReturnDate, FineAmount FROM Transactions WHERE ") 
+             + (filter == "1" ? "MemberID" : "BookID") + " = " + input;
+
+
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        cout << "\nID\tMemID\tBookID\tIssue\tDue\tReturn\tFine\n";
+        while (SQLFetch(stmt) == SQL_SUCCESS) {
+            int tx, mem, bk;
+            char issue[20], due[20], ret[20];
+            double fine;
+
+            SQLGetData(stmt, 1, SQL_C_SLONG, &tx, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_SLONG, &mem, 0, NULL);
+            SQLGetData(stmt, 3, SQL_C_SLONG, &bk, 0, NULL);
+            SQLGetData(stmt, 4, SQL_C_CHAR, issue, sizeof(issue), NULL);
+            SQLGetData(stmt, 5, SQL_C_CHAR, due, sizeof(due), NULL);
+            SQLGetData(stmt, 6, SQL_C_CHAR, ret, sizeof(ret), NULL);
+            SQLGetData(stmt, 7, SQL_C_DOUBLE, &fine, 0, NULL);
+
+            cout << tx << "\t" << mem << "\t" << bk << "\t" << issue << "\t" << due << "\t" << ret << "\t" << fine << "\n";
+        }
+    } else {
+        cout << "No records found.\n";
+    }
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+}
