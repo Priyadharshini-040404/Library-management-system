@@ -737,3 +737,76 @@ void memberMenu() {
         }
     }
 }
+void transactionMenu() {
+    if (currentUserRole == "admin") {
+        while (true) {
+            cout << "\n=== Transaction Menu ===\n1. Issue Book\n2. Return Book\n3. Reserve Book\n4. Back\nChoice: ";
+            int choice; cin >> choice; cin.ignore();
+            switch (choice) {
+                case 1: issueBook(); break;
+                case 2: returnBook(); break;
+                case 3: reserveBook(); break;
+                case 4: return;
+                default: cout << "Invalid choice.\n";
+            }
+        }
+    } else {
+        while (true) {
+            cout << "\n=== Transactions ===\n1. Return Book\n2. Reserve Book\n3. View History\n4. Back\nChoice: ";
+            int choice; cin >> choice; cin.ignore();
+            switch (choice) {
+                case 1: returnBook(); break;
+                case 2: reserveBook(); break;
+                case 3: transactionHistory(); break;
+                case 4: return;
+                default: cout << "Invalid choice.\n";
+            }
+        }
+    }
+}
+
+void reportsMenu() {
+    if (currentUserRole != "admin") {
+        cout << "Access denied. Reports available only for admin.\n";
+        return;
+    }
+
+    string choice;
+    do {
+        cout << "\n--- Reports Menu ---\n";
+        cout << "1. View Top 10 Issued Books\n";
+        cout << "2. View Most Active Members\n";
+        cout << "3. Fine Collection Summary\n";
+        cout << "4. Export reports to CSV\n";
+        cout << "5. Back\n> ";
+        getline(cin, choice);
+
+        if (choice == "1") viewTopIssuedBooks();
+        else if (choice == "2") viewMostActiveMembers();
+        else if (choice == "3") fineCollectionSummary();
+        else if (choice == "4") exportReportsToCSV();
+        else if (choice == "5") break;
+        else cout << "Invalid option.\n";
+    } while (true);
+}
+
+void showMenu() {
+    while (true) {
+        if (currentUserRole == "admin") {
+            cout << "\n=== Main Menu ===\n1. Book Management\n2. Member Management\n3. Transactions\n4.Reports\n5. Logout\nChoice: ";
+        } else {
+            cout << "\n========= Library Management =========\n"
+                 << "1. Books Management\n2. Members Management\n3. Transactions\n4.Reports\n5.Logout\nChoice: ";
+        }
+
+        int choice; cin >> choice; cin.ignore();
+        switch (choice) {
+            case 1: bookMenu(); break;
+            case 2: memberMenu(); break;
+            case 3: transactionMenu(); break;
+            case 4: reportsMenu(); break;
+            case 5: return;
+            default: cout << "Invalid choice.\n";
+        }
+    }
+}
