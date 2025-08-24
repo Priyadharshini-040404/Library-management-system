@@ -179,3 +179,56 @@ void deleteBook() {
     }
     cout << (execSQL("DELETE FROM Books WHERE ISBN='" + isbn + "'") ? "Book deleted successfully.\n" : "Delete failed.\n");
 }
+void viewBooks() {
+    int pageSize = 5, page = 0;
+    string choice;
+    do {
+        int offset = page * pageSize;
+        string sql = "SELECT BookID, Title, Author, ISBN, Availability FROM books ORDER BY Title OFFSET " +
+                     to_string(offset) + " ROWS FETCH NEXT " + to_string(pageSize) + " ROWS ONLY";
+
+        SQLHSTMT stmt;
+        SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+        if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) == SQL_SUCCESS) {
+            cout << "\nPage " << page + 1 << "\nID\tTitle\tAuthor\tISBN\tAvailability\n";
+            while (SQLFetch(stmt) == SQL_SUCCESS) {
+                int id, avail;
+                char title[255], author[200], isbn[20];
+                SQLGetData(stmt, 1, SQL_C_SLONG, &id, 0, NULL);
+                SQLGetData(stmt, 2, SQL_C_CHAR, title, sizeof(title), NULL);
+                SQLGetData(stmt, 3, SQL_C_CHAR, author, sizeof(author), NULL);
+                SQLGetData(stmt, 4, SQL_C_CHAR, isbn, sizeof(isbn), NULL);
+                SQLGetData(stmt, 5, SQL_C_LONG, &avail, 0, NULL);
+                cout << id << "\t" << title << "\t" << author << "\t" << isbn << "\t" << (avail ? "Yes" : "No") << "\n";
+            }
+        }
+        SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+
+        cout << "[N]ext, [P]revious, [Q]uit: ";
+        getline(cin, choice);
+        if (choice == "N" || choice == "n") page++;
+        else if ((choice == "P" || choice == "p") && page > 0) page--;
+    } while (choice != "Q" && choice != "q");
+}
+
+void searchBooks() {
+    cout << "Enter keyword to search in title: ";
+    string keyword; getline(cin, keyword);
+    string sql = "SELECT BookID, Title, Author, ISBN FROM books WHERE Title LIKE N'%" + keyword + "%'";
+
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        cout << "ID\tTitle\tAuthor\tISBN\n";
+        while (SQLFetch(stmt) == SQL_SUCCESS) {
+            int id;
+            char title[255], author[200], isbn[20];
+            SQLGetData(stmt, 1, SQL_C_SLONG, &id, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_CHAR, title, sizeof(title), NULL);
+            SQLGetData(stmt, 3, SQL_C_CHAR, author, sizeof(author), NULL);
+            SQLGetData(stmt, 4, SQL_C_CHAR, isbn, sizeof(isbn), NULL);
+            cout << id << "\t" << title << "\t" << author << "\t" << isbn << "\n";
+        }
+    }
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+}
