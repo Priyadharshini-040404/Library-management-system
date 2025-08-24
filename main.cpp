@@ -504,3 +504,70 @@ void transactionHistory() {
     }
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
+// ... similar transaction functions issueBook, returnBook, reserveBook, transactionHistory
+void viewTopIssuedBooks() {
+    string sql = "SELECT TOP 10 BookID, COUNT(*) AS IssueCount FROM Transactions GROUP BY BookID ORDER BY IssueCount DESC";
+
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        cout << "\nTop 10 Issued Books:\nBookID\tIssueCount\n";
+        while (SQLFetch(stmt) == SQL_SUCCESS) {
+            int bookId, count;
+            SQLGetData(stmt, 1, SQL_C_SLONG, &bookId, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_SLONG, &count, 0, NULL);
+            cout << bookId << "\t" << count << "\n";
+        }
+    } else {
+        cout << "Failed to fetch top issued books.\n";
+    }
+
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+}
+
+void viewMostActiveMembers() {
+    string sql = "SELECT TOP 10 MemberID, COUNT(*) AS TransactionCount FROM Transactions GROUP BY MemberID ORDER BY TransactionCount DESC";
+
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        cout << "\nMost Active Members:\nMemberID\tTransactionCount\n";
+        while (SQLFetch(stmt) == SQL_SUCCESS) {
+            int memberId, count;
+            SQLGetData(stmt, 1, SQL_C_SLONG, &memberId, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_SLONG, &count, 0, NULL);
+            cout << memberId << "\t" << count << "\n";
+        }
+    } else {
+        cout << "Failed to fetch active members.\n";
+    }
+
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+}
+
+void fineCollectionSummary() {
+    string sql = "SELECT SUM(FineAmount) AS TotalFines, COUNT(*) AS TotalTransactions FROM Transactions WHERE FineAmount > 0";
+
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) == SQL_SUCCESS) {
+        if (SQLFetch(stmt) == SQL_SUCCESS) {
+            double totalFines = 0;
+            int totalTransactions = 0;
+            SQLGetData(stmt, 1, SQL_C_DOUBLE, &totalFines, 0, NULL);
+            SQLGetData(stmt, 2, SQL_C_SLONG, &totalTransactions, 0, NULL);
+            cout << "\nFine Collection Summary:\n";
+            cout << "Total Fines Collected: ₹" << totalFines << "\n";
+            cout << "Transactions with Fine: " << totalTransactions << "\n";
+        } else {
+            cout << "No fine data found.\n";
+        }
+    } else {
+        cout << "Failed to fetch fine summary.\n";
+    }
+
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+}
