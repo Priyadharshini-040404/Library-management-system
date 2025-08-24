@@ -709,3 +709,31 @@ void bookMenu() {
         }
     }
 }
+void memberMenu() {
+    if (currentUserRole == "admin") {
+        while (true) {
+            cout << "\n=== Member Menu ===\n1. Add Member\n2. Update Member\n3. Delete Member\n4. View Members\n5. Search Members\n6. Back\nChoice: ";
+            int choice; cin >> choice; cin.ignore();
+            switch (choice) {
+                case 1: addMember(); break;
+                case 2: updateMember(); break;
+                case 3: deleteMember(); break;
+                case 4: viewMembers(); break;
+                case 5: searchMembers(); break;
+                case 6: return;
+                default: cout << "Invalid choice.\n";
+            }
+        }
+    } else {
+        while (true) {
+            cout << "\n=== Members ===\n1. View Members\n2. Search Members\n3. Back\nChoice: ";
+            int choice; cin >> choice; cin.ignore();
+            switch (choice) {
+                case 1: viewMembers(); break;
+                case 2: searchMembers(); break;
+                case 3: return;
+                default: cout << "Invalid choice.\n";
+            }
+        }
+    }
+}
