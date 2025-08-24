@@ -163,3 +163,19 @@ void updateBook() {
 
     cout << (execSQL(sql) ? "Book updated successfully.\n" : "Update failed.\n");
 }
+void deleteBook() {
+    if (currentUserRole != "admin") {
+        cout << "Access denied. Only admin can perform this action.\n";
+        return;
+    }
+
+    string isbn;
+    cout << "Enter ISBN to delete: "; getline(cin, isbn);
+    if (!exists("SELECT * FROM Books WHERE ISBN='" + isbn + "'")) {
+        cout << "Book not found.\n"; return;
+    }
+    if (exists("SELECT * FROM Transactions WHERE BookID=(SELECT BookID FROM Books WHERE ISBN='" + isbn + "') AND ReturnDate IS NULL")) {
+        cout << "Book currently issued, cannot delete.\n"; return;
+    }
+    cout << (execSQL("DELETE FROM Books WHERE ISBN='" + isbn + "'") ? "Book deleted successfully.\n" : "Delete failed.\n");
+}
