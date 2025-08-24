@@ -232,3 +232,48 @@ void searchBooks() {
     }
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
+// ===== Member Management =====
+void addMember() {
+    if (currentUserRole != "admin") { cout << "Access denied.\n"; return; }
+
+    string name, email, phone, address, membership;
+    cout << "Name: "; getline(cin, name);
+    cout << "Email: "; getline(cin, email);
+    if (exists("SELECT * FROM members WHERE email='" + email + "'")) { cout << "Email exists.\n"; return; }
+    cout << "Phone: "; getline(cin, phone);
+    cout << "Address: "; getline(cin, address);
+    cout << "Membership Type: "; getline(cin, membership);
+
+    string sql = "INSERT INTO members (name,email,phone,address,membershiptype,joindate,status) "
+                 "VALUES ('" + name + "','" + email + "','" + phone + "','" + address + "','" + membership + "',GETDATE(),'Active')";
+    cout << (execSQL(sql) ? "Member added.\n" : "Failed to add member.\n");
+}
+
+void updateMember() {
+    if (currentUserRole != "admin") {
+        cout << "Access denied. Only admin can perform this action.\n";
+        return;
+    }
+
+    string email;
+    cout << "Enter email of member to update: "; getline(cin, email);
+    if (!exists("SELECT * FROM members WHERE email='" + email + "'")) {
+        cout << "Member not found.\n"; 
+        return;
+    }
+
+    string phone, address, membership;
+    cout << "New phone (leave blank to skip): "; getline(cin, phone);
+    cout << "New address (leave blank to skip): "; getline(cin, address);
+    cout << "New Membership Type (Regular/Premium, leave blank to skip): "; getline(cin, membership);
+
+    string sql = "UPDATE members SET ";
+    bool first = true;
+
+    if (!phone.empty()) { sql += (first ? "" : ", ") + string("Phone=N'") + phone + "'"; first=false; }
+    if (!address.empty()) { sql += (first ? "" : ", ") + string("Address=N'") + address + "'"; first=false; }
+    if (!membership.empty()) { sql += (first ? "" : ", ") + string("MembershipType=N'") + membership + "'"; }
+
+    sql += " WHERE Email='" + email + "'";
+    cout << (execSQL(sql) ? "Member updated successfully.\n" : "Failed to update member.\n");
+}
