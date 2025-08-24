@@ -49,3 +49,42 @@ bool execSQL(const string& sql) {
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
     return SQL_SUCCEEDED(ret);
 }
+// ===== Login =====
+bool login() {
+    string username, password;
+    cout << "\n=== Login ===\nUsername: ";
+    getline(cin, username);
+    cout << "Password: ";
+    getline(cin, password);
+
+    string sql = "SELECT role FROM users WHERE username='" + username + 
+             "' AND passwordhash='" + password + "'";
+
+
+    SQLHSTMT stmt;
+    if (!SQL_SUCCEEDED(SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt))) return false;
+    if (!SQL_SUCCEEDED(SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS))) {
+        showError("Login", stmt, SQL_HANDLE_STMT);
+        SQLFreeHandle(SQL_HANDLE_STMT, stmt); return false;
+    }
+
+    SQLCHAR role[20], status[20];
+    if (SQLFetch(stmt) == SQL_SUCCESS) {
+        SQLGetData(stmt, 1, SQL_C_CHAR, role, sizeof(role), NULL);
+        SQLGetData(stmt, 2, SQL_C_CHAR, status, sizeof(status), NULL);
+        SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+
+        if (string((char*)status) == "Inactive") {
+            cout << "Account is inactive.\n";
+            return false;
+        }
+
+        currentUserRole = (char*)role;
+        cout << "Login successful. Role: " << currentUserRole << "\n";
+        return true;
+    } else {
+        cout << "Invalid credentials.\n";
+        SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+        return false;
+    }
+}
