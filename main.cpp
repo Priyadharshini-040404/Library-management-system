@@ -530,6 +530,7 @@ void viewTopIssuedBooks() {
         }
     } else {
         cout << "Failed to fetch top issued books.\n";
+          
     }
 
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
