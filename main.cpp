@@ -49,6 +49,7 @@ bool execSQL(const string& sql) {
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
     return SQL_SUCCEEDED(ret);
 }
+
 // ===== Login =====
 bool login() {
     string username, password;
@@ -88,6 +89,7 @@ bool login() {
         return false;
     }
 }
+
 // ===== Book Management =====
 void addBook() {
     if (currentUserRole != "admin") {
@@ -163,6 +165,7 @@ void updateBook() {
 
     cout << (execSQL(sql) ? "Book updated successfully.\n" : "Update failed.\n");
 }
+
 void deleteBook() {
     if (currentUserRole != "admin") {
         cout << "Access denied. Only admin can perform this action.\n";
@@ -179,6 +182,7 @@ void deleteBook() {
     }
     cout << (execSQL("DELETE FROM Books WHERE ISBN='" + isbn + "'") ? "Book deleted successfully.\n" : "Delete failed.\n");
 }
+
 void viewBooks() {
     int pageSize = 5, page = 0;
     string choice;
@@ -277,6 +281,7 @@ void updateMember() {
     sql += " WHERE Email='" + email + "'";
     cout << (execSQL(sql) ? "Member updated successfully.\n" : "Failed to update member.\n");
 }
+
 void deleteMember() {
     if (currentUserRole != "admin") {
         cout << "Access denied. Only admin can perform this action.\n";
@@ -354,6 +359,7 @@ void searchMembers() {
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
 // ... similar functions for updateMember, deleteMember, viewMembers, searchMembers
+
 void issueBook() {
     int memberId, bookId;
     cout << "Enter Member ID: ";
@@ -402,6 +408,7 @@ void issueBook() {
         cout << "Failed to issue book.\n";
     }
 }
+
 void returnBook() {
     int bookId;
     cout << "Enter Book ID to return: ";
@@ -437,6 +444,7 @@ void returnBook() {
     execSQL("UPDATE Books SET Availability = 1 WHERE BookID = " + to_string(bookId));
     cout << "Book returned. Fine: ₹" << fine << "\n";
 }
+
 void reserveBook() {
     int bookId, memberId;
     cout << "Enter Book ID to reserve: ";
@@ -504,6 +512,7 @@ void transactionHistory() {
     }
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
+
 // ... similar transaction functions issueBook, returnBook, reserveBook, transactionHistory
 void viewTopIssuedBooks() {
     string sql = "SELECT TOP 10 BookID, COUNT(*) AS IssueCount FROM Transactions GROUP BY BookID ORDER BY IssueCount DESC";
@@ -680,6 +689,7 @@ int main() {
     SQLFreeHandle(SQL_HANDLE_ENV, env);
     return 0;
 }
+
 // ===== Menus =====
 void bookMenu() {
     if (currentUserRole == "admin") {
@@ -709,6 +719,7 @@ void bookMenu() {
         }
     }
 }
+
 void memberMenu() {
     if (currentUserRole == "admin") {
         while (true) {
@@ -737,6 +748,7 @@ void memberMenu() {
         }
     }
 }
+
 void transactionMenu() {
     if (currentUserRole == "admin") {
         while (true) {
