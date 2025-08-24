@@ -680,3 +680,32 @@ int main() {
     SQLFreeHandle(SQL_HANDLE_ENV, env);
     return 0;
 }
+// ===== Menus =====
+void bookMenu() {
+    if (currentUserRole == "admin") {
+        while (true) {
+            cout << "\n=== Book Menu ===\n1. Add Book\n2. Update Book\n3. Delete Book\n4. View Books\n5. Search Books\n6. Back\nChoice: ";
+            int choice; cin >> choice; cin.ignore();
+            switch (choice) {
+                case 1: addBook(); break;
+                case 2: updateBook(); break;
+                case 3: deleteBook(); break;
+                case 4: viewBooks(); break;
+                case 5: searchBooks(); break;
+                case 6: return;
+                default: cout << "Invalid choice.\n";
+            }
+        }
+    } else {
+        while (true) {
+            cout << "\n=== Books ===\n1. View Books\n2. Search Books\n3. Back\nChoice: ";
+            int choice; cin >> choice; cin.ignore();
+            switch (choice) {
+                case 1: viewBooks(); break;
+                case 2: searchBooks(); break;
+                case 3: return;
+                default: cout << "Invalid choice.\n";
+            }
+        }
+    }
+}
