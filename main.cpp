@@ -354,3 +354,51 @@ void searchMembers() {
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
 // ... similar functions for updateMember, deleteMember, viewMembers, searchMembers
+void issueBook() {
+    int memberId, bookId;
+    cout << "Enter Member ID: ";
+    cin >> memberId;
+    cout << "Enter Book ID: ";
+    cin >> bookId;
+    cin.ignore();
+
+    // Check book availability
+    string checkBookSQL = "SELECT Availability FROM Books WHERE BookID = " + to_string(bookId);
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+    SQLExecDirect(stmt, (SQLCHAR*)checkBookSQL.c_str(), SQL_NTS);
+
+    int available = 0;
+    if (SQLFetch(stmt) == SQL_SUCCESS)
+        SQLGetData(stmt, 1, SQL_C_LONG, &available, 0, NULL);
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+
+    if (!available) {
+        cout << "Book is not available.\n";
+        return;
+    }
+
+    // Max 5 books per member
+    string checkLimitSQL = "SELECT COUNT(*) FROM Transactions WHERE MemberID = " + to_string(memberId) + " AND ReturnDate IS NULL";
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+    SQLExecDirect(stmt, (SQLCHAR*)checkLimitSQL.c_str(), SQL_NTS);
+
+    int count = 0;
+    if (SQLFetch(stmt) == SQL_SUCCESS)
+        SQLGetData(stmt, 1, SQL_C_LONG, &count, 0, NULL);
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+
+    if (count >= 5) {
+        cout << "Member has reached max limit (5 books).\n";
+        return;
+    }
+
+    string sql = "INSERT INTO Transactions (MemberID, BookID, IssueDate, DueDate) "
+                 "VALUES (" + to_string(memberId) + "," + to_string(bookId) + ", GETDATE(), DATEADD(day,14,GETDATE()))";
+    if (execSQL(sql)) {
+        execSQL("UPDATE Books SET Availability = 0 WHERE BookID = " + to_string(bookId));
+        cout << "Book issued successfully.\n";
+    } else {
+        cout << "Failed to issue book.\n";
+    }
+}
