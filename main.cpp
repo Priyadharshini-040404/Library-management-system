@@ -402,3 +402,38 @@ void issueBook() {
         cout << "Failed to issue book.\n";
     }
 }
+void returnBook() {
+    int bookId;
+    cout << "Enter Book ID to return: ";
+    cin >> bookId;
+    cin.ignore();
+
+    string sql = "SELECT TransactionID, DATEDIFF(day, DueDate, GETDATE()) AS LateDays "
+                 "FROM Transactions WHERE BookID = " + to_string(bookId) + " AND ReturnDate IS NULL";
+
+    SQLHSTMT stmt;
+    SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+    if (SQLExecDirect(stmt, (SQLCHAR*)sql.c_str(), SQL_NTS) != SQL_SUCCESS) {
+        SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+        cout << "Error retrieving transaction.\n";
+        return;
+    }
+
+    int txId = 0, lateDays = 0;
+    if (SQLFetch(stmt) == SQL_SUCCESS) {
+        SQLGetData(stmt, 1, SQL_C_SLONG, &txId, 0, NULL);
+        SQLGetData(stmt, 2, SQL_C_SLONG, &lateDays, 0, NULL);
+    } else {
+        cout << "No active transaction found.\n";
+        SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+        return;
+    }
+    SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+
+    double fine = lateDays > 0 ? lateDays * 5.0 : 0.0;
+    string updateSQL = "UPDATE Transactions SET ReturnDate = GETDATE(), FineAmount = " + to_string(fine) +
+                       " WHERE TransactionID = " + to_string(txId);
+    execSQL(updateSQL);
+    execSQL("UPDATE Books SET Availability = 1 WHERE BookID = " + to_string(bookId));
+    cout << "Book returned. Fine: ₹" << fine << "\n";
+}
