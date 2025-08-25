@@ -1,0 +1,6 @@
+Title,Author,Genre,Publisher,ISBN,Edition,PublishedYear,Price,RackLocation,Language
+The C++ Programming Language,Bjarne Stroustrup,Programming,Addison-Wesley,9780321563842,4th,2013,850.00,A1,English
+Introduction to Algorithms,Thomas H. Cormen,Algorithms,MIT Press,9780262033848,3rd,2009,1200.00,A2,English
+Design Patterns,Erich Gamma,Software Engineering,Addison-Wesley,9780201633610,1st,1994,750.00,A3,English
+The Pragmatic Programmer,Andrew Hunt & David Thomas,Software Development,Addison-Wesley,9780201616224,1st,1999,599.00,A1,English
+Clean Code,Robert C. Martin,Programming,Prentice Hall,9780132350884,1st,2008,699.00,A2,English

@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <vector>
 using namespace std;
 
 // Global handles
@@ -53,7 +54,7 @@ bool execSQL(const string& sql) {
 // ===== Login =====
 bool login() {
     string username, password;
-    cout << "\n=== Login ===\nUsername: ";
+    cout << "\n Login \nUsername: ";
     getline(cin, username);
     cout << "Password: ";
     getline(cin, password);
@@ -236,6 +237,90 @@ void searchBooks() {
     }
     SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
+
+// ===== Bulk CSV Import for Books =====
+void importBooksFromCSV() {
+    string filepath;
+    cout << "Enter CSV file path: ";
+    getline(cin, filepath);
+
+    // Remove quotes if present
+    if (!filepath.empty() && filepath.front() == '"' && filepath.back() == '"') {
+        filepath = filepath.substr(1, filepath.size() - 2);
+    }
+
+    ifstream file(filepath);
+    if (!file.is_open()) {
+        cout << "Failed to open file.\n";
+        return;
+    }
+
+    string line;
+    int rowCount = 0;
+
+    // Read header line first (assumes first row is column names)
+    if (!getline(file, line)) {
+        cout << "CSV file is empty.\n";
+        return;
+    }
+
+    // Lambda to escape single quotes in strings
+    auto escapeQuotes = [](const string &str) -> string {
+        string escaped = str;
+        size_t pos = 0;
+        while ((pos = escaped.find("'", pos)) != string::npos) {
+            escaped.replace(pos, 1, "''"); // double single quotes for SQL Server
+            pos += 2;
+        }
+        return escaped;
+    };
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string title, author, genre, publisher, isbn, edition, yearStr, priceStr, rack, language;
+
+        getline(ss, title, ',');
+        getline(ss, author, ',');
+        getline(ss, genre, ',');
+        getline(ss, publisher, ',');
+        getline(ss, isbn, ',');
+        getline(ss, edition, ',');
+        getline(ss, yearStr, ',');
+        getline(ss, priceStr, ',');
+        getline(ss, rack, ',');
+        getline(ss, language, ',');
+
+        // Skip empty lines
+        if (isbn.empty()) continue;
+
+        int year = stoi(yearStr);
+        double price = stod(priceStr);
+
+        // Skip if ISBN already exists
+        if (exists("SELECT * FROM Books WHERE ISBN='" + isbn + "'")) continue;
+
+        // Escape single quotes to avoid SQL syntax errors
+        title = escapeQuotes(title);
+        author = escapeQuotes(author);
+        genre = escapeQuotes(genre);
+        publisher = escapeQuotes(publisher);
+        edition = escapeQuotes(edition);
+        rack = escapeQuotes(rack);
+        language = escapeQuotes(language);
+
+        string sql = "INSERT INTO Books (Title, Author, Genre, Publisher, ISBN, Edition, PublishedYear, Price, RackLocation, Language, Availability) "
+                     "VALUES (N'" + title + "', N'" + author + "', N'" + genre + "', N'" + publisher + "', '" + isbn + "', N'" + edition + "', " +
+                     to_string(year) + ", " + to_string(price) + ", N'" + rack + "', N'" + language + "', 1)";
+
+        if (execSQL(sql)) rowCount++;
+    }
+
+    cout << "Bulk import completed. Rows inserted: " << rowCount << "\n";
+    file.close();
+}
+
+
+
 // ===== Member Management =====
 void addMember() {
     if (currentUserRole != "admin") { cout << "Access denied.\n"; return; }
@@ -695,7 +780,7 @@ int main() {
 void bookMenu() {
     if (currentUserRole == "admin") {
         while (true) {
-            cout << "\n=== Book Menu ===\n1. Add Book\n2. Update Book\n3. Delete Book\n4. View Books\n5. Search Books\n6. Back\nChoice: ";
+            cout << "\nBook Menu \n1. Add Book\n2. Update Book\n3. Delete Book\n4. View Books\n5. Search Books\n6. Bulk Import\n7. Back\nChoice: ";
             int choice; cin >> choice; cin.ignore();
             switch (choice) {
                 case 1: addBook(); break;
@@ -703,13 +788,14 @@ void bookMenu() {
                 case 3: deleteBook(); break;
                 case 4: viewBooks(); break;
                 case 5: searchBooks(); break;
-                case 6: return;
+                case 6: importBooksFromCSV(); break;
+                case 7: return;
                 default: cout << "Invalid choice.\n";
             }
         }
     } else {
         while (true) {
-            cout << "\n=== Books ===\n1. View Books\n2. Search Books\n3. Back\nChoice: ";
+            cout << "\n Books \n1. View Books\n2. Search Books\n3. Back\nChoice: ";
             int choice; cin >> choice; cin.ignore();
             switch (choice) {
                 case 1: viewBooks(); break;
@@ -724,7 +810,7 @@ void bookMenu() {
 void memberMenu() {
     if (currentUserRole == "admin") {
         while (true) {
-            cout << "\n=== Member Menu ===\n1. Add Member\n2. Update Member\n3. Delete Member\n4. View Members\n5. Search Members\n6. Back\nChoice: ";
+            cout << "\n Member Menu \n1. Add Member\n2. Update Member\n3. Delete Member\n4. View Members\n5. Search Members\n6. Back\nChoice: ";
             int choice; cin >> choice; cin.ignore();
             switch (choice) {
                 case 1: addMember(); break;
@@ -738,7 +824,7 @@ void memberMenu() {
         }
     } else {
         while (true) {
-            cout << "\n=== Members ===\n1. View Members\n2. Search Members\n3. Back\nChoice: ";
+            cout << "\n Members \n1. View Members\n2. Search Members\n3. Back\nChoice: ";
             int choice; cin >> choice; cin.ignore();
             switch (choice) {
                 case 1: viewMembers(); break;
@@ -753,7 +839,7 @@ void memberMenu() {
 void transactionMenu() {
     if (currentUserRole == "admin") {
         while (true) {
-            cout << "\n=== Transaction Menu ===\n1. Issue Book\n2. Return Book\n3. Reserve Book\n4. Back\nChoice: ";
+            cout << "\n Transaction Menu \n1. Issue Book\n2. Return Book\n3. Reserve Book\n4. Back\nChoice: ";
             int choice; cin >> choice; cin.ignore();
             switch (choice) {
                 case 1: issueBook(); break;
@@ -765,7 +851,7 @@ void transactionMenu() {
         }
     } else {
         while (true) {
-            cout << "\n=== Transactions ===\n1. Return Book\n2. Reserve Book\n3. View History\n4. Back\nChoice: ";
+            cout << "\n Transactions \n1. Return Book\n2. Reserve Book\n3. View History\n4. Back\nChoice: ";
             int choice; cin >> choice; cin.ignore();
             switch (choice) {
                 case 1: returnBook(); break;
@@ -786,7 +872,7 @@ void reportsMenu() {
 
     string choice;
     do {
-        cout << "\n--- Reports Menu ---\n";
+        cout << "\n Reports Menu\n";
         cout << "1. View Top 10 Issued Books\n";
         cout << "2. View Most Active Members\n";
         cout << "3. Fine Collection Summary\n";
@@ -806,9 +892,9 @@ void reportsMenu() {
 void showMenu() {
     while (true) {
         if (currentUserRole == "admin") {
-            cout << "\n=== Main Menu ===\n1. Book Management\n2. Member Management\n3. Transactions\n4.Reports\n5. Logout\nChoice: ";
+            cout << "\nMain Menu \n1. Book Management\n2. Member Management\n3. Transactions\n4.Reports\n5. Logout\nChoice: ";
         } else {
-            cout << "\n========= Library Management =========\n"
+            cout << "\n Library Management \n"
                  << "1. Books Management\n2. Members Management\n3. Transactions\n4.Reports\n5.Logout\nChoice: ";
         }
 
